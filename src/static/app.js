@@ -20,11 +20,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Add delete icon next to each participant
+        const participantItems = details.participants.map(participant => `
+          <li>
+            ${participant}
+            <span class="delete-icon" data-activity="${name}" data-email="${participant}">&times;</span>
+          </li>
+        `).join("");
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants">
+            <strong>Participants:</strong>
+            <ul>
+              ${participantItems}
+            </ul>
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
@@ -34,6 +48,28 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+
+        // Add event listener for delete icons
+        activityCard.querySelectorAll(".delete-icon").forEach(icon => {
+          icon.addEventListener("click", async (event) => {
+            const activity = event.target.dataset.activity;
+            const email = event.target.dataset.email;
+
+            try {
+              const response = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`, {
+                method: "DELETE",
+              });
+
+              if (response.ok) {
+                fetchActivities(); // Refresh activities list
+              } else {
+                console.error("Failed to unregister participant");
+              }
+            } catch (error) {
+              console.error("Error unregistering participant:", error);
+            }
+          });
+        });
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
